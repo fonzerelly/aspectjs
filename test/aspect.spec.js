@@ -1,0 +1,2 @@
+describe("aspectjs", function () {
+});
