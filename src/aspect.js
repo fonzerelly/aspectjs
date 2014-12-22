@@ -1,4 +1,5 @@
 (function (window) {
+
   window.aspect = function(onWhichObjectIsTheMethod, nameOfTheToChangeMethod, exchangeBy) {
     if (typeof nameOfTheToChangeMethod !== "string") {
       throw new TypeError("aspect awaits a String for nameOfTheToChangeMethod");
@@ -12,14 +13,34 @@
     var originalMethod = onWhichObjectIsTheMethod[nameOfTheToChangeMethod];
 
     onWhichObjectIsTheMethod[nameOfTheToChangeMethod] = function () {
-      var methodArguments = Array.prototype.slice.call(arguments),
-          result = "result";
-      exchangeBy.apply(this, [function () {
-        result = originalMethod();
-      }, methodArguments]);
-      return result;
+      var directlyPassedParams = Array.prototype.slice.call(arguments),
+          result,
+          exchangeByResult = exchangeBy.apply(this, [function () {
+        var paramsPassedBy_exchangeBy = Array.prototype.slice.call(arguments),
+            params = paramsPassedBy_exchangeBy;
+
+        if (params.length === 0) {
+          params = directlyPassedParams;
+        }
+
+        //if a mere function gets called inside a method, its this references the global object
+        //which means the window-object for browsers
+        //ToDo: Find a way to replace window by Nicholas C. Zakas
+        //
+        // function getGlobal(){
+        //   return (function(){
+        //     return this;
+        //   }).call(null);
+        // }
+        //
+        result = originalMethod.apply((this === window ) ? onWhichObjectIsTheMethod : this, params);
+      }, directlyPassedParams]);
+      return exchangeByResult || result;
     };
 
+    //ToDo: Make sure that when several aspects have been called on the same
+    //object-method-combination that undoing it will only undo the aspect added
+    //by it not the one at that time.
     return function () {
       onWhichObjectIsTheMethod[nameOfTheToChangeMethod] = originalMethod;
     };
