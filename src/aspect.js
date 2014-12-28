@@ -51,14 +51,14 @@
       throw new TypeError("aspectS" + timingFuction.slice(1) + " awaits a Function for exchangeBy");
     }
     return aspect(window, timingFunction, function(orgTimingFunction, params) {
-      var f = params[0],
-          t = params[1],
+      var callback = params[0],
+          timeout = params[1],
           timedOutParams = Array.prototype.slice.call(params, 2),
           modifiedTimingFunctionParams = [
             function () {
-              exchangeBy.apply(null, [f, timedOutParams]);
+              exchangeBy.apply(null, [callback, timedOutParams]);
             },
-            t,
+            timeout,
             timedOutParams
           ];
           console.log(timedOutParams);
