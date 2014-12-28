@@ -61,7 +61,6 @@
             timeout,
             timedOutParams
           ];
-          console.log(timedOutParams);
 
       orgTimingFunction.apply(window, modifiedTimingFunctionParams);
     });
