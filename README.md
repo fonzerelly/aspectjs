@@ -70,7 +70,7 @@ myObject.method() // will again result in
 //do something.
 ```
 
-#!!!Caution!!!#
+**!!!Caution!!!**
 If you apply several aspects on the same object-method-combination, you will
 only be able to undo the aspect that the undo-function has been created for.
 This means:
