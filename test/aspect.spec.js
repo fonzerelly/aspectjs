@@ -23,8 +23,12 @@ describe("aspectjs", function () {
         expect(_.partial(aspect, obj, "method", "dummy")).toThrow();
       });
 
-      it("should return a function", function() {
-        expect(aspect(obj, "method", function () {}) instanceof Function).toBeTruthy();
+      it("should return a function, to undo the aspect modification", function() {
+        var originalMethod = obj.method,
+            undoAspect = aspect(obj, 'method', function() {});
+        expect(undoAspect instanceof Function).toBeTruthy();
+        undoAspect();
+        expect(obj.method).toBe(originalMethod);
       });
     }); //interface
 
@@ -45,12 +49,6 @@ describe("aspectjs", function () {
         expect(spyable.replacement).toHaveBeenCalled();
       });
 
-      it("should call the original method, after aspect got reversed", function () {
-        var originalMethod = obj.method,
-            reverseAspect = aspect(obj, 'method', function() {});
-        reverseAspect();
-        expect(obj.method).toBe(originalMethod);
-      });
     }); //manipulated object
 
     describe("callback", function () {
@@ -162,4 +160,178 @@ describe("aspectjs", function () {
     }); //callback
   }); //aspect
 
+  describe("aspectSetTimeout", function () {
+    var originalSetTimeout;
+
+    beforeEach(function () {
+      originalSetTimeout = window.setTimeout;
+    });
+
+    afterEach(function() {
+      window.setTimeout = originalSetTimeout;
+    });
+
+    it("should be defined", function () {
+      expect(aspectSetTimeout).toBeDefined();
+    });
+
+    describe("interface", function () {
+      it("should only accept a function as input", function () {
+        expect(aspectSetTimeout).toThrow();
+      });
+
+      it("should return a function to undo the aspect modification", function() {
+        var originalSetTimeout = window.setTimeout,
+            undoAspect = aspectSetTimeout(function () {});
+        expect(undoAspect instanceof Function).toBeTruthy();
+        undoAspect();
+        expect(window.setTimeout).toBe(originalSetTimeout);
+      });
+    }); //interface
+
+    describe("manipulated setTimeout", function () {
+      var wrappingFunctionCalled = false;
+      beforeEach(function(done) {
+        aspectSetTimeout(function(fn) {
+          wrappingFunctionCalled = true;
+          done();
+        });
+        setTimeout(function() {}, 10);
+      });
+
+      it("should call the passed function instead of the function passed to setTimeout", function () {
+        expect(wrappingFunctionCalled).toBeTruthy();
+      });
+
+      it("should return an id to cancle the timeout", function () {
+        var spyable = {
+          method: function () {}
+        };
+        spyOn(spyable, "method");
+        var timeoutId = setTimeout(spyable.method, 10);
+        clearTimeout(timeoutId);
+        expect(spyable.method).not.toHaveBeenCalled();
+      });
+    }); //manipulated setTimeout
+
+    describe("callback", function () {
+      var fnPassed = function () {},
+          fnGot = null,
+          paramsPassed = [1,2,3],
+          paramsGot = null;
+
+      beforeEach(function(done) {
+        aspectSetTimeout(function(fn, params) {
+          fnGot = fn;
+          paramsGot = params;
+          done();
+        });
+        setTimeout.apply(null, [fnPassed, 10].concat(paramsPassed) );
+      });
+
+      afterEach(function () {
+        fnGot = null;
+        paramsGot = null;
+      });
+
+      it("should get the original callback as first parameter", function () {
+        expect(fnGot).toBe(fnPassed);
+      });
+
+      it("should get the params, passed to setTimeout", function () {
+        expect(paramsGot).toEqual(paramsPassed);
+      });
+    });
+  });
+
+  describe("aspectSetInterval", function () {
+    var originalSetInterval;
+
+    beforeEach(function () {
+      originalSetInterval = window.setInterval;
+    });
+
+    afterEach(function() {
+      window.setInterval = originalSetInterval;
+    });
+
+    it("should be defined", function () {
+      expect(aspectSetInterval).toBeDefined();
+    });
+
+    describe("interface", function () {
+      it("should only accept a function as input", function () {
+        expect(aspectSetInterval).toThrow();
+      });
+
+      it("should return a function to undo the aspect modification", function() {
+        var originalSetInterval = window.setInterval,
+            undoAspect = aspectSetInterval(function () {});
+        expect(undoAspect instanceof Function).toBeTruthy();
+        undoAspect();
+        expect(window.setInterval).toBe(originalSetInterval);
+      });
+    }); //interface
+
+    describe("manipulated setInterval", function () {
+      var wrappingFunctionCalled = false,
+          intervalId = null;
+      beforeEach(function(done) {
+        aspectSetInterval(function(fn) {
+          wrappingFunctionCalled = true;
+          done();
+        });
+        intervalId = setInterval(function() {}, 10);
+      });
+
+      afterEach(function() {
+        clearInterval(intervalId);
+      });
+
+      it("should call the passed function instead of the function passed to setInterval", function () {
+        expect(wrappingFunctionCalled).toBeTruthy();
+      });
+
+      it("should return an id to cancle the timeout", function () {
+        var spyable = {
+          method: function () {}
+        };
+        spyOn(spyable, "method");
+        var timeoutId = setInterval(spyable.method, 10);
+        clearInterval(timeoutId);
+        expect(spyable.method).not.toHaveBeenCalled();
+      });
+    }); //manipulated setInterval
+
+    describe("callback", function () {
+      var fnPassed = function () {},
+          fnGot = null,
+          paramsPassed = [1,2,3],
+          paramsGot = null,
+          intervalId = null;
+
+      beforeEach(function(done) {
+        aspectSetInterval(function(fn, params) {
+          fnGot = fn;
+          paramsGot = params;
+          done();
+        });
+        intervalId = setInterval.apply(null, [fnPassed, 10].concat(paramsPassed) );
+      });
+
+      afterEach(function () {
+        fnGot = null;
+        paramsGot = null;
+        clearInterval(intervalId);
+      });
+
+      it("should get the original callback as first parameter", function () {
+        expect(fnGot).toBe(fnPassed);
+      });
+
+      it("should get the params, passed to setInterval", function () {
+        expect(paramsGot).toEqual(paramsPassed);
+      });
+    });
+  });
 });

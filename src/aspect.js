@@ -45,4 +45,33 @@
       onWhichObjectIsTheMethod[nameOfTheToChangeMethod] = originalMethod;
     };
   };
+
+  function _aspectTiming(timingFunction, exchangeBy) {
+    if (!(exchangeBy instanceof Function)) {
+      throw new TypeError("aspectS" + timingFuction.slice(1) + " awaits a Function for exchangeBy");
+    }
+    return aspect(window, timingFunction, function(orgTimingFunction, params) {
+      var f = params[0],
+          t = params[1],
+          timedOutParams = Array.prototype.slice.call(params, 2),
+          modifiedTimingFunctionParams = [
+            function () {
+              exchangeBy.apply(null, [f, timedOutParams]);
+            },
+            t,
+            timedOutParams
+          ];
+          console.log(timedOutParams);
+
+      orgTimingFunction.apply(window, modifiedTimingFunctionParams);
+    });
+  }
+
+  window.aspectSetTimeout = function (exchangeBy) {
+    return _aspectTiming("setTimeout", exchangeBy);
+  };
+
+  window.aspectSetInterval = function (exchangeBy) {
+    return _aspectTiming("setInterval", exchangeBy);
+  };
 }(window));
